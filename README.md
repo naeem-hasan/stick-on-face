@@ -4,6 +4,8 @@ Puts any object on the face using the power of Python and OpenCV!
 ## Requirements:
 * Python 2. Get it from [here](https://www.python.org/downloads/release/python-2713/)!
 * python-opencv. Install it by `sudo apt-get install python-opencv`
+* Python Imaging Library's friendly fork Pillow. Install it by `sudo pip install Pillow`
+* Numpy. Install it by `sudo pip install numpy`
 
 You're set!
 
