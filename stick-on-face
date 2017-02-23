@@ -1,0 +1,59 @@
+#!/usr/bin/python
+import cv2
+import numpy as np
+from PIL import Image
+from os.path import basename, realpath, dirname, join
+
+file_dir = dirname(realpath(__file__))
+cascPath = join(file_dir, "haarcascade_frontalface_default.xml")
+face_cascade = cv2.CascadeClassifier(cascPath)
+
+scale_factor = 1.1
+min_neighbors = 3
+min_size = (30, 30)
+flags = cv2.cv.CV_HAAR_SCALE_IMAGE
+
+
+def prepare_stick(image):
+    image.load()
+
+    image_data = np.asarray(image)
+    image_data_bw = image_data.max(axis=2)
+    non_empty_columns = np.where(image_data_bw.max(axis=0) > 0)[0]
+    non_empty_rows = np.where(image_data_bw.max(axis=1) > 0)[0]
+    cropBox = (min(non_empty_rows), max(non_empty_rows), min(non_empty_columns), max(non_empty_columns))
+    image_data_new = image_data[cropBox[0]:cropBox[1] + 1, cropBox[2]:cropBox[3] + 1, :]
+
+    return Image.fromarray(image_data_new)
+
+
+def stick(image_path, stick_image, show_img):
+    image = cv2.imread(image_path)
+
+    faces = face_cascade.detectMultiScale(image, scaleFactor=scale_factor, minNeighbors=min_neighbors, minSize=min_size, flags=flags)
+
+    if faces.all():
+        img = Image.open(image_path)
+        stick_image = prepare_stick(Image.open(stick_image))
+        sw, sh = stick_image.size
+        for (x, y, w, h) in faces:
+            stick_image = stick_image.resize((w, (sh * w) / sw))
+            offset = (x, y + (h / 2) - (((sh * w) / sw) / 2))
+            img.paste(stick_image, offset, stick_image)
+        img.save("[STICKED]" + basename(image_path))
+        if show_img:
+            img.show()
+    else:
+        raise "No faces found! :("
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("image", help="The main image file you want to stick on")
+    parser.add_argument("--stickimage", help="The image you want to stick", default=join(file_dir, "doge.png"))
+    parser.add_argument("--nopreview", help="If you want to see the output", action="store_false")
+
+    args = parser.parse_args()
+    stick(args.image, args.stickimage, args.nopreview)
